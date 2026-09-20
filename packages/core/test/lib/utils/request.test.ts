@@ -755,7 +755,6 @@ describe('request utils', () => {
         ['pref=1; Max-Age=3600', { 'http.request.header.set-cookie': ['pref=1'] }],
         ['color=blue; Path=/dashboard', { 'http.request.header.set-cookie': ['color=blue'] }],
         ['token=eyJhbGc=.eyJzdWI=.SflKxw; Secure', { 'http.request.header.set-cookie': ['token=[Filtered]'] }],
-        // A set-cookie string without "=" is a nameless cookie: the bare token is its value.
         ['auth_required; HttpOnly', { 'http.request.header.set-cookie': ['[Filtered]'] }],
         ['empty=; Secure', { 'http.request.header.set-cookie': ['empty='] }],
       ])('should parse and filter Set-Cookie header: %s', (setCookieValue, expected) => {
@@ -780,6 +779,12 @@ describe('request utils', () => {
         const headers = { Cookie: 'random-string=eyJhbGc=.eyJzdWI=.SflKxw' };
         const result = httpHeadersToSpanAttributes(headers, resolveDataCollectionOptions({}));
         expect(result).toEqual({ 'http.request.header.cookie': ['random-string=eyJhbGc=.eyJzdWI=.SflKxw'] });
+      });
+
+      it('URL-decodes and unquotes cookie values', () => {
+        const headers = { Cookie: 'theme=%22dark%20mode%22' };
+        const result = httpHeadersToSpanAttributes(headers, resolveDataCollectionOptions({}));
+        expect(result).toEqual({ 'http.request.header.cookie': ['theme="dark mode"'] });
       });
 
       it.each([
